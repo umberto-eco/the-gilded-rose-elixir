@@ -2,6 +2,9 @@ defmodule GildedRose do
   use Agent
   alias GildedRose.Item
 
+  # @default_values []
+  # @default_items []
+
   def new() do
     {:ok, agent} =
       Agent.start_link(fn ->
