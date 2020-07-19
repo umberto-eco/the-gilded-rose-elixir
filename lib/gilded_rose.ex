@@ -2,6 +2,10 @@ defmodule GildedRose do
   use Agent
   alias GildedRose.Item
 
+  ###
+  # Exceptional item types
+  ##
+
   @aged_brie "Aged Brie"
   @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
   @conjured "Conjured Mana Cake"
@@ -148,6 +152,7 @@ defmodule GildedRose do
   #   :ok
   # end
 
+  @spec update_quality(pid()) :: :ok
   def update_quality(agent) do
     new_state =
       agent
@@ -159,9 +164,18 @@ defmodule GildedRose do
     Agent.update(agent, fn _state -> new_state end)
   end
 
+  ###
+  # Sulfurus
+  ##
+
+  @spec put_quality(%Item{}) :: %Item{}
   defp put_quality(%Item{name: @sulfuras} = item) do
     item
   end
+
+  ###
+  # Aged brie
+  ##
 
   defp put_quality(%Item{name: @aged_brie, quality: quality, sell_in: sell_in} = item)
        when sell_in > 0 do
@@ -171,6 +185,10 @@ defmodule GildedRose do
   defp put_quality(%Item{name: @aged_brie, quality: quality} = item) do
     %{item | quality: quality + 2}
   end
+
+  ###
+  # Backstage passes
+  ##
 
   defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
        when sell_in > 10 do
@@ -191,6 +209,10 @@ defmodule GildedRose do
     %{item | quality: 0}
   end
 
+  ###
+  # Conjured items
+  ##
+
   defp put_quality(%Item{name: @conjured, quality: quality, sell_in: sell_in} = item)
        when sell_in > 0 do
     %{item | quality: quality - 2}
@@ -200,6 +222,10 @@ defmodule GildedRose do
     %{item | quality: quality - 4}
   end
 
+  ###
+  # Normal items
+  ##
+
   defp put_quality(%Item{quality: quality, sell_in: sell_in} = item) when sell_in > 0 do
     %{item | quality: quality - 1}
   end
@@ -208,6 +234,11 @@ defmodule GildedRose do
     %{item | quality: quality - 2}
   end
 
+  ###
+  # Helpers and other rules
+  ##
+
+  @spec clamp_quality(%Item{}) :: %Item{}
   defp clamp_quality(%Item{name: @sulfuras} = item), do: item
 
   defp clamp_quality(%Item{quality: quality} = item) do
@@ -215,6 +246,7 @@ defmodule GildedRose do
     %{item | quality: quality}
   end
 
+  @spec put_sell_in(%Item{}) :: %Item{}
   defp put_sell_in(%Item{name: @sulfuras} = item), do: item
 
   defp put_sell_in(%Item{sell_in: sell_in} = item) do
