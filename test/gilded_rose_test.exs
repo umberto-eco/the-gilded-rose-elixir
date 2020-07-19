@@ -4,11 +4,11 @@ defmodule GildedRoseTest do
 
   doctest GildedRose
 
-  @aged_brie "Aged Brie"
-  @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
-  @conjured "Conjured Mana Cake"
+  @aged_brie GildedRose.special_types().aged_brie
+  @backstage_passes GildedRose.special_types().backstage_passes
+  @conjured GildedRose.special_types().conjured
   @normal "Elixir of the Mongoose"
-  @sulfuras "Sulfuras, Hand of Ragnaros"
+  @sulfuras GildedRose.special_types().sulfuras
 
   @default_sell_in 15
   @default_quality 20
@@ -46,9 +46,10 @@ defmodule GildedRoseTest do
       assert is_pid(GildedRose.new())
     end
 
-    test "stores, by default, a list of `Item`s derived from `@default_items`" do
+    test "stores, by default, a list of `%Item{}`s derived from `default_items/0`" do
       items = GildedRose.default_items()
-      assert GildedRose.items(GildedRose.new()) == items
+      agent = GildedRose.new(items)
+      assert Agent.get(agent, & &1) == items
     end
   end
 
@@ -56,7 +57,7 @@ defmodule GildedRoseTest do
     test "supports passage of custom state as an argument" do
       state = [item_fixture()]
       agent = GildedRose.new(state)
-      assert GildedRose.items(agent) == state
+      assert Agent.get(agent, & &1) == state
     end
   end
 
@@ -86,7 +87,7 @@ defmodule GildedRoseTest do
   end
 
   describe "For all items, except `Sulfuras`, `GildedRose.update_quality/1`" do
-    test "decrements `:sell_in` by one" do
+    test "decreases `:sell_in` by one" do
       items = [item_fixture(), item_fixture(@aged_brie), item_fixture(@backstage_passes)]
       agent = GildedRose.new(items)
       GildedRose.update_quality(agent)
