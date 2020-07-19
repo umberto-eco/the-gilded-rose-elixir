@@ -10,9 +10,12 @@ defmodule GildedRoseTest do
 
   describe "`GildedRose.new/0`" do
     test "returns a PID" do
+      assert is_pid(GildedRose.new())
     end
 
     test "stores, by default, a list of `Item`s derived from `@default_items`" do
+      items = GildedRose.default_items()
+      assert GildedRose.items(GildedRose.new()) == items
     end
   end
 

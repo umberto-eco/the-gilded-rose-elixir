@@ -2,22 +2,28 @@ defmodule GildedRose do
   use Agent
   alias GildedRose.Item
 
-  # @default_values []
-  # @default_items []
+  @aged_brie "Aged Brie"
+  @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
+  @conjured "Conjured Mana Cake"
+  @sulfurus "Sulfuras, Hand of Ragnaros"
 
-  def new() do
-    {:ok, agent} =
-      Agent.start_link(fn ->
-        [
-          Item.new("+5 Dexterity Vest", 10, 20),
-          Item.new("Aged Brie", 2, 0),
-          Item.new("Elixir of the Mongoose", 5, 7),
-          Item.new("Sulfuras, Hand of Ragnaros", 0, 80),
-          Item.new("Backstage passes to a TAFKAL80ETC concert", 15, 20),
-          Item.new("Conjured Mana Cake", 3, 6)
-        ]
-      end)
+  @default_values [
+    {"+5 Dexterity Vest", 10, 20},
+    {@aged_brie, 2, 0},
+    {"Elixir of the Mongoose", 5, 7},
+    {@sulfurus, 0, 80},
+    {@backstage_passes, 15, 20},
+    {@conjured, 3, 6}
+  ]
 
+  @default_items Enum.map(@default_values, fn {name, sell_in, quality} ->
+                   Item.new(name, sell_in, quality)
+                 end)
+
+  def default_items, do: @default_items
+
+  def new(items \\ @default_items) do
+    {:ok, agent} = Agent.start_link(fn -> items end)
     agent
   end
 
