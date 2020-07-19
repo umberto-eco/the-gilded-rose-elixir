@@ -5,13 +5,13 @@ defmodule GildedRose do
   @aged_brie "Aged Brie"
   @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
   @conjured "Conjured Mana Cake"
-  @sulfurus "Sulfuras, Hand of Ragnaros"
+  @sulfuras "Sulfuras, Hand of Ragnaros"
 
   @default_values [
     {"+5 Dexterity Vest", 10, 20},
     {@aged_brie, 2, 0},
     {"Elixir of the Mongoose", 5, 7},
-    {@sulfurus, 0, 80},
+    {@sulfuras, 0, 80},
     {@backstage_passes, 15, 20},
     {@conjured, 3, 6}
   ]
