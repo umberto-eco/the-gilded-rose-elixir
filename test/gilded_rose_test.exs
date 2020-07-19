@@ -213,9 +213,25 @@ defmodule GildedRoseTest do
 
   describe "For `Conjured items`, `GildedRose.update_quality/1`" do
     test "degrades `:quality` by two when `:sell_in` more than zero" do
+      items = [item_fixture(@conjured, 1, 10)]
+      agent = GildedRose.new(items)
+      GildedRose.update_quality(agent)
+
+      assert [%Item{quality: 8}] = GildedRose.items(agent)
     end
 
     test "degrades `:quality` by four when `:sell_in` is zero or less" do
+      items = [item_fixture(@conjured, 0, 10)]
+      agent = GildedRose.new(items)
+      GildedRose.update_quality(agent)
+
+      assert [%Item{quality: 6}] = GildedRose.items(agent)
+
+      items = [item_fixture(@conjured, -1, 10)]
+      agent = GildedRose.new(items)
+      GildedRose.update_quality(agent)
+
+      assert [%Item{quality: 6}] = GildedRose.items(agent)
     end
   end
 

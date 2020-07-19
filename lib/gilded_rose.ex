@@ -159,56 +159,65 @@ defmodule GildedRose do
     Agent.update(agent, fn _state -> new_state end)
   end
 
-  def put_quality(%Item{name: @sulfuras} = item) do
+  defp put_quality(%Item{name: @sulfuras} = item) do
     item
   end
 
-  def put_quality(%Item{name: @aged_brie, quality: quality, sell_in: sell_in} = item)
-      when sell_in > 0 do
+  defp put_quality(%Item{name: @aged_brie, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
     %{item | quality: quality + 1}
   end
 
-  def put_quality(%Item{name: @aged_brie, quality: quality} = item) do
+  defp put_quality(%Item{name: @aged_brie, quality: quality} = item) do
     %{item | quality: quality + 2}
   end
 
-  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
-      when sell_in > 10 do
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 10 do
     %{item | quality: quality + 1}
   end
 
-  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
-      when sell_in > 5 do
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 5 do
     %{item | quality: quality + 2}
   end
 
-  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
-      when sell_in > 0 do
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
     %{item | quality: quality + 3}
   end
 
-  def put_quality(%Item{name: @backstage_passes} = item) do
+  defp put_quality(%Item{name: @backstage_passes} = item) do
     %{item | quality: 0}
   end
 
-  def put_quality(%Item{quality: quality, sell_in: sell_in} = item) when sell_in > 0 do
-    %{item | quality: quality - 1}
-  end
-
-  def put_quality(%Item{quality: quality} = item) do
+  defp put_quality(%Item{name: @conjured, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
     %{item | quality: quality - 2}
   end
 
-  def clamp_quality(%Item{name: @sulfuras} = item), do: item
+  defp put_quality(%Item{name: @conjured, quality: quality} = item) do
+    %{item | quality: quality - 4}
+  end
 
-  def clamp_quality(%Item{quality: quality} = item) do
+  defp put_quality(%Item{quality: quality, sell_in: sell_in} = item) when sell_in > 0 do
+    %{item | quality: quality - 1}
+  end
+
+  defp put_quality(%Item{quality: quality} = item) do
+    %{item | quality: quality - 2}
+  end
+
+  defp clamp_quality(%Item{name: @sulfuras} = item), do: item
+
+  defp clamp_quality(%Item{quality: quality} = item) do
     quality = quality |> min(@quality_max) |> max(@quality_min)
     %{item | quality: quality}
   end
 
-  def put_sell_in(%Item{name: @sulfuras} = item), do: item
+  defp put_sell_in(%Item{name: @sulfuras} = item), do: item
 
-  def put_sell_in(%Item{sell_in: sell_in} = item) do
+  defp put_sell_in(%Item{sell_in: sell_in} = item) do
     %{item | sell_in: sell_in - 1}
   end
 end
