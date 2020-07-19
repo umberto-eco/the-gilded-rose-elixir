@@ -16,6 +16,9 @@ defmodule GildedRose do
     {@conjured, 3, 6}
   ]
 
+  @quality_min 0
+  @quality_max 50
+
   def default_items do
     Enum.map(@default_values, fn {name, sell_in, quality} ->
       Item.new(name, sell_in, quality)
@@ -29,119 +32,183 @@ defmodule GildedRose do
 
   def items(agent), do: Agent.get(agent, & &1)
 
+  # def update_quality(agent) do
+  #   for i <- 0..(Agent.get(agent, &length/1) - 1) do
+  #     item = Agent.get(agent, &Enum.at(&1, i))
+
+  #     item =
+  #       cond do
+  #         item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
+  #           if item.quality > 0 do
+  #             if item.name != "Sulfuras, Hand of Ragnaros" do
+  #               %{item | quality: item.quality - 1}
+  #             else
+  #               item
+  #             end
+  #           else
+  #             item
+  #           end
+
+  #         true ->
+  #           cond do
+  #             item.quality < 50 ->
+  #               item = %{item | quality: item.quality + 1}
+
+  #               cond do
+  #                 item.name == "Backstage passes to a TAFKAL80ETC concert" ->
+  #                   item =
+  #                     cond do
+  #                       item.sell_in < 11 ->
+  #                         cond do
+  #                           item.quality < 50 ->
+  #                             %{item | quality: item.quality + 1}
+
+  #                           true ->
+  #                             item
+  #                         end
+
+  #                       true ->
+  #                         item
+  #                     end
+
+  #                   cond do
+  #                     item.sell_in < 6 ->
+  #                       cond do
+  #                         item.quality < 50 ->
+  #                           %{item | quality: item.quality + 1}
+
+  #                         true ->
+  #                           item
+  #                       end
+
+  #                     true ->
+  #                       item
+  #                   end
+
+  #                 true ->
+  #                   item
+  #               end
+
+  #             true ->
+  #               item
+  #           end
+  #       end
+
+  #     item =
+  #       cond do
+  #         item.name != "Sulfuras, Hand of Ragnaros" ->
+  #           %{item | sell_in: item.sell_in - 1}
+
+  #         true ->
+  #           item
+  #       end
+
+  #     item =
+  #       cond do
+  #         item.sell_in < 0 ->
+  #           cond do
+  #             item.name != "Aged Brie" ->
+  #               cond do
+  #                 item.name != "Backstage passes to a TAFKAL80ETC concert" ->
+  #                   cond do
+  #                     item.quality > 0 ->
+  #                       cond do
+  #                         item.name != "Sulfuras, Hand of Ragnaros" ->
+  #                           %{item | quality: item.quality - 1}
+
+  #                         true ->
+  #                           item
+  #                       end
+
+  #                     true ->
+  #                       item
+  #                   end
+
+  #                 true ->
+  #                   %{item | quality: item.quality - item.quality}
+  #               end
+
+  #             true ->
+  #               cond do
+  #                 item.quality < 50 ->
+  #                   %{item | quality: item.quality + 1}
+
+  #                 true ->
+  #                   item
+  #               end
+  #           end
+
+  #         true ->
+  #           item
+  #       end
+
+  #     Agent.update(agent, &List.replace_at(&1, i, item))
+  #   end
+
+  #   :ok
+  # end
+
   def update_quality(agent) do
-    for i <- 0..(Agent.get(agent, &length/1) - 1) do
-      item = Agent.get(agent, &Enum.at(&1, i))
+    new_state =
+      agent
+      |> items()
+      |> Enum.map(&put_quality(&1))
+      |> Enum.map(&clamp_quality(&1))
+      |> Enum.map(&put_sell_in(&1))
 
-      item =
-        cond do
-          item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-            if item.quality > 0 do
-              if item.name != "Sulfuras, Hand of Ragnaros" do
-                %{item | quality: item.quality - 1}
-              else
-                item
-              end
-            else
-              item
-            end
+    Agent.update(agent, fn _state -> new_state end)
+  end
 
-          true ->
-            cond do
-              item.quality < 50 ->
-                item = %{item | quality: item.quality + 1}
+  def put_quality(%Item{name: @sulfuras} = item) do
+    item
+  end
 
-                cond do
-                  item.name == "Backstage passes to a TAFKAL80ETC concert" ->
-                    item =
-                      cond do
-                        item.sell_in < 11 ->
-                          cond do
-                            item.quality < 50 ->
-                              %{item | quality: item.quality + 1}
+  def put_quality(%Item{name: @aged_brie, quality: quality, sell_in: sell_in} = item)
+      when sell_in > 0 do
+    %{item | quality: quality + 1}
+  end
 
-                            true ->
-                              item
-                          end
+  def put_quality(%Item{name: @aged_brie, quality: quality} = item) do
+    %{item | quality: quality + 2}
+  end
 
-                        true ->
-                          item
-                      end
+  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+      when sell_in > 10 do
+    %{item | quality: quality + 1}
+  end
 
-                    cond do
-                      item.sell_in < 6 ->
-                        cond do
-                          item.quality < 50 ->
-                            %{item | quality: item.quality + 1}
+  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+      when sell_in > 5 do
+    %{item | quality: quality + 2}
+  end
 
-                          true ->
-                            item
-                        end
+  def put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+      when sell_in > 0 do
+    %{item | quality: quality + 3}
+  end
 
-                      true ->
-                        item
-                    end
+  def put_quality(%Item{name: @backstage_passes} = item) do
+    %{item | quality: 0}
+  end
 
-                  true ->
-                    item
-                end
+  def put_quality(%Item{quality: quality, sell_in: sell_in} = item) when sell_in > 0 do
+    %{item | quality: quality - 1}
+  end
 
-              true ->
-                item
-            end
-        end
+  def put_quality(%Item{quality: quality} = item) do
+    %{item | quality: quality - 2}
+  end
 
-      item =
-        cond do
-          item.name != "Sulfuras, Hand of Ragnaros" ->
-            %{item | sell_in: item.sell_in - 1}
+  def clamp_quality(%Item{name: @sulfuras} = item), do: item
 
-          true ->
-            item
-        end
+  def clamp_quality(%Item{quality: quality} = item) do
+    quality = quality |> min(@quality_max) |> max(@quality_min)
+    %{item | quality: quality}
+  end
 
-      item =
-        cond do
-          item.sell_in < 0 ->
-            cond do
-              item.name != "Aged Brie" ->
-                cond do
-                  item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-                    cond do
-                      item.quality > 0 ->
-                        cond do
-                          item.name != "Sulfuras, Hand of Ragnaros" ->
-                            %{item | quality: item.quality - 1}
+  def put_sell_in(%Item{name: @sulfuras} = item), do: item
 
-                          true ->
-                            item
-                        end
-
-                      true ->
-                        item
-                    end
-
-                  true ->
-                    %{item | quality: item.quality - item.quality}
-                end
-
-              true ->
-                cond do
-                  item.quality < 50 ->
-                    %{item | quality: item.quality + 1}
-
-                  true ->
-                    item
-                end
-            end
-
-          true ->
-            item
-        end
-
-      Agent.update(agent, &List.replace_at(&1, i, item))
-    end
-
-    :ok
+  def put_sell_in(%Item{sell_in: sell_in} = item) do
+    %{item | sell_in: sell_in - 1}
   end
 end
