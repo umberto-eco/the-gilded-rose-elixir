@@ -16,13 +16,13 @@ defmodule GildedRose do
     {@conjured, 3, 6}
   ]
 
-  @default_items Enum.map(@default_values, fn {name, sell_in, quality} ->
-                   Item.new(name, sell_in, quality)
-                 end)
+  def default_items do
+    Enum.map(@default_values, fn {name, sell_in, quality} ->
+      Item.new(name, sell_in, quality)
+    end)
+  end
 
-  def default_items, do: @default_items
-
-  def new(items \\ @default_items) do
+  def new(items \\ default_items()) do
     {:ok, agent} = Agent.start_link(fn -> items end)
     agent
   end

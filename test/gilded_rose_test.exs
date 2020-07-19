@@ -1,6 +1,48 @@
 defmodule GildedRoseTest do
   use ExUnit.Case
+  alias GildedRose.Item
+
   doctest GildedRose
+
+  # @default_items [
+  #   %Item{name: "+5 Dexterity Vest", sell_in: 10, quality: 20},
+  #   %Item{name: "Aged Brie", sell_in: 2, quality: 0},
+  #   %Item{name: "Elixir of the Mongoose", sell_in: 5, quality: 7},
+  #   %Item{name: "Sulfuras, Hand of Ragnaros", sell_in: 0, quality: 80},
+  #   %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 15, quality: 20},
+  #   %Item{name: "Conjured Mana Cake", sell_in: 3, quality: 6}
+  # ]
+
+  @aged_brie "Aged Brie"
+  @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
+  @conjured "Conjured Mana Cake"
+  @normal "Elixir of the Mongoose"
+  @sulfurus "Sulfuras, Hand of Ragnaros"
+
+  @default_sell_in 15
+  @default_quality 20
+
+  def item_fixture(type \\ @normal, sell_in \\ @default_sell_in, quality \\ @default_quality)
+
+  def item_fixture(@aged_brie, sell_in, quality) do
+    Item.new(@aged_brie, sell_in, quality)
+  end
+
+  def item_fixture(@backstage_passes, sell_in, quality) do
+    Item.new(@backstage_passes, sell_in, quality)
+  end
+
+  def item_fixture(@conjured, sell_in, quality) do
+    Item.new(@conjured, sell_in, quality)
+  end
+
+  def item_fixture(@sulfurus, _sell_in, _quality) do
+    Item.new(@sulfurus, 0, 80)
+  end
+
+  def item_fixture(name, sell_in, quality) do
+    Item.new(name, sell_in, quality)
+  end
 
   test "interface specification" do
     gilded_rose = GildedRose.new()
@@ -21,6 +63,9 @@ defmodule GildedRoseTest do
 
   describe "GildedRose.new/1" do
     test "supports passage of custom state as an argument" do
+      state = [item_fixture()]
+      agent = GildedRose.new(state)
+      assert GildedRose.items(agent) == state
     end
   end
 
