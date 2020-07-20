@@ -27,15 +27,6 @@ defmodule GildedRose do
   @quality_min 0
   @quality_max 50
 
-  @default_values [
-    {"+5 Dexterity Vest", 10, 20},
-    {@aged_brie, 2, 0},
-    {"Elixir of the Mongoose", 5, 7},
-    {@sulfuras, 0, 80},
-    {@backstage_passes, 15, 20},
-    {@conjured, 3, 6}
-  ]
-
   @doc """
   Special types.
 
@@ -51,9 +42,14 @@ defmodule GildedRose do
   end
 
   def default_items do
-    Enum.map(@default_values, fn {name, sell_in, quality} ->
-      Item.new(name, sell_in, quality)
-    end)
+    [
+      %Item{name: "+5 Dexterity Vest", sell_in: 10, quality: 20},
+      %Item{name: @aged_brie, sell_in: 2, quality: 0},
+      %Item{name: "Elixir of the Mongoose", sell_in: 5, quality: 7},
+      %Item{name: @sulfuras, sell_in: 0, quality: 80},
+      %Item{name: @backstage_passes, sell_in: 15, quality: 20},
+      %Item{name: @conjured, sell_in: 3, quality: 6}
+    ]
   end
 
   @moduledoc """
