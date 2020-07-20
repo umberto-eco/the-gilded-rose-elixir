@@ -11,6 +11,22 @@ defmodule GildedRose do
   @conjured "Conjured Mana Cake"
   @sulfuras "Sulfuras, Hand of Ragnaros"
 
+  ###
+  # Quality thresholds.
+  #
+  # Used by `clamp_quality/1`, which circumscribes values for `:quality` to
+  # levels we define here.
+  #
+  # Excepting `sulfuras`, for which `:quality` is constant (i.e., `80`), the
+  # `:quality` for all other items:
+  #
+  # - Is never negative;
+  # - Is never more than fifty.
+  ##
+
+  @quality_min 0
+  @quality_max 50
+
   @default_values [
     {"+5 Dexterity Vest", 10, 20},
     {@aged_brie, 2, 0},
@@ -20,9 +36,11 @@ defmodule GildedRose do
     {@conjured, 3, 6}
   ]
 
-  @quality_min 0
-  @quality_max 50
+  @doc """
+  Special types.
 
+  We aggregate and export all exceptional item types to accommodate unit tests.
+  """
   def special_types do
     %{
       aged_brie: @aged_brie,
@@ -38,6 +56,10 @@ defmodule GildedRose do
     end)
   end
 
+  @moduledoc """
+  New (`Agent` for use with this module).
+  """
+  @spec new(any()) :: pid()
   def new(items \\ default_items()) do
     {:ok, agent} = Agent.start_link(fn -> items end)
     agent
@@ -45,6 +67,18 @@ defmodule GildedRose do
 
   def items(agent), do: Agent.get(agent, & &1)
 
+  @moduledoc """
+  Update `:quality` (and `:sell_in` on `%Item{}`s contained by `Agent`).
+
+  Provided an `Agent`,
+
+  ## Examples
+
+      iex> agent = GildedRose.new()
+      iex> GildedRose.update_quality(agent)
+      :ok
+
+  """
   @spec update_quality(pid()) :: :ok
   def update_quality(agent) do
     new_state =
