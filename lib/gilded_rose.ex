@@ -2,137 +2,177 @@ defmodule GildedRose do
   use Agent
   alias GildedRose.Item
 
-  def new() do
-    {:ok, agent} =
-      Agent.start_link(fn ->
-        [
-          Item.new("+5 Dexterity Vest", 10, 20),
-          Item.new("Aged Brie", 2, 0),
-          Item.new("Elixir of the Mongoose", 5, 7),
-          Item.new("Sulfuras, Hand of Ragnaros", 0, 80),
-          Item.new("Backstage passes to a TAFKAL80ETC concert", 15, 20),
-          Item.new("Conjured Mana Cake", 3, 6)
-        ]
-      end)
+  ###
+  # Exceptional item types
+  ##
 
+  @aged_brie "Aged Brie"
+  @backstage_passes "Backstage passes to a TAFKAL80ETC concert"
+  @conjured "Conjured Mana Cake"
+  @sulfuras "Sulfuras, Hand of Ragnaros"
+
+  ###
+  # Quality thresholds.
+  #
+  # Used by `clamp_quality/1`, which circumscribes values for `:quality` to
+  # levels we define here.
+  #
+  # Excepting `sulfuras`, for which `:quality` is constant (i.e., `80`), the
+  # `:quality` for all other items:
+  #
+  # - Is never negative;
+  # - Is never more than fifty.
+  ##
+
+  @quality_min 0
+  @quality_max 50
+
+  @doc """
+  Special types.
+
+  We aggregate and export all exceptional item types to accommodate unit tests.
+  """
+  def special_types do
+    %{
+      aged_brie: @aged_brie,
+      backstage_passes: @backstage_passes,
+      conjured: @conjured,
+      sulfuras: @sulfuras
+    }
+  end
+
+  def default_items do
+    [
+      %Item{name: "+5 Dexterity Vest", sell_in: 10, quality: 20},
+      %Item{name: @aged_brie, sell_in: 2, quality: 0},
+      %Item{name: "Elixir of the Mongoose", sell_in: 5, quality: 7},
+      %Item{name: @sulfuras, sell_in: 0, quality: 80},
+      %Item{name: @backstage_passes, sell_in: 15, quality: 20},
+      %Item{name: @conjured, sell_in: 3, quality: 6}
+    ]
+  end
+
+  @moduledoc """
+  New (`Agent` for use with this module).
+  """
+  @spec new(any()) :: pid()
+  def new(items \\ default_items()) do
+    {:ok, agent} = Agent.start_link(fn -> items end)
     agent
   end
 
   def items(agent), do: Agent.get(agent, & &1)
 
+  @moduledoc """
+  Update `:quality` (and `:sell_in` on `%Item{}`s contained by `Agent`).
+
+  Provided an `Agent`,
+
+  ## Examples
+
+      iex> agent = GildedRose.new()
+      iex> GildedRose.update_quality(agent)
+      :ok
+
+  """
+  @spec update_quality(pid()) :: :ok
   def update_quality(agent) do
-    for i <- 0..(Agent.get(agent, &length/1) - 1) do
-      item = Agent.get(agent, &Enum.at(&1, i))
+    new_state =
+      agent
+      |> items()
+      |> Enum.map(&put_quality(&1))
+      |> Enum.map(&clamp_quality(&1))
+      |> Enum.map(&put_sell_in(&1))
 
-      item =
-        cond do
-          item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-            if item.quality > 0 do
-              if item.name != "Sulfuras, Hand of Ragnaros" do
-                %{item | quality: item.quality - 1}
-              else
-                item
-              end
-            else
-              item
-            end
+    Agent.update(agent, fn _state -> new_state end)
+  end
 
-          true ->
-            cond do
-              item.quality < 50 ->
-                item = %{item | quality: item.quality + 1}
+  ###
+  # Sulfurus
+  ##
 
-                cond do
-                  item.name == "Backstage passes to a TAFKAL80ETC concert" ->
-                    item =
-                      cond do
-                        item.sell_in < 11 ->
-                          cond do
-                            item.quality < 50 ->
-                              %{item | quality: item.quality + 1}
+  @spec put_quality(%Item{}) :: %Item{}
+  defp put_quality(%Item{name: @sulfuras} = item) do
+    item
+  end
 
-                            true ->
-                              item
-                          end
+  ###
+  # Aged brie
+  ##
 
-                        true ->
-                          item
-                      end
+  defp put_quality(%Item{name: @aged_brie, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
+    %{item | quality: quality + 1}
+  end
 
-                    cond do
-                      item.sell_in < 6 ->
-                        cond do
-                          item.quality < 50 ->
-                            %{item | quality: item.quality + 1}
+  defp put_quality(%Item{name: @aged_brie, quality: quality} = item) do
+    %{item | quality: quality + 2}
+  end
 
-                          true ->
-                            item
-                        end
+  ###
+  # Backstage passes
+  ##
 
-                      true ->
-                        item
-                    end
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 10 do
+    %{item | quality: quality + 1}
+  end
 
-                  true ->
-                    item
-                end
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 5 do
+    %{item | quality: quality + 2}
+  end
 
-              true ->
-                item
-            end
-        end
+  defp put_quality(%Item{name: @backstage_passes, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
+    %{item | quality: quality + 3}
+  end
 
-      item =
-        cond do
-          item.name != "Sulfuras, Hand of Ragnaros" ->
-            %{item | sell_in: item.sell_in - 1}
+  defp put_quality(%Item{name: @backstage_passes} = item) do
+    %{item | quality: 0}
+  end
 
-          true ->
-            item
-        end
+  ###
+  # Conjured items
+  ##
 
-      item =
-        cond do
-          item.sell_in < 0 ->
-            cond do
-              item.name != "Aged Brie" ->
-                cond do
-                  item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-                    cond do
-                      item.quality > 0 ->
-                        cond do
-                          item.name != "Sulfuras, Hand of Ragnaros" ->
-                            %{item | quality: item.quality - 1}
+  defp put_quality(%Item{name: @conjured, quality: quality, sell_in: sell_in} = item)
+       when sell_in > 0 do
+    %{item | quality: quality - 2}
+  end
 
-                          true ->
-                            item
-                        end
+  defp put_quality(%Item{name: @conjured, quality: quality} = item) do
+    %{item | quality: quality - 4}
+  end
 
-                      true ->
-                        item
-                    end
+  ###
+  # Normal items
+  ##
 
-                  true ->
-                    %{item | quality: item.quality - item.quality}
-                end
+  defp put_quality(%Item{quality: quality, sell_in: sell_in} = item) when sell_in > 0 do
+    %{item | quality: quality - 1}
+  end
 
-              true ->
-                cond do
-                  item.quality < 50 ->
-                    %{item | quality: item.quality + 1}
+  defp put_quality(%Item{quality: quality} = item) do
+    %{item | quality: quality - 2}
+  end
 
-                  true ->
-                    item
-                end
-            end
+  ###
+  # Helpers and other rules
+  ##
 
-          true ->
-            item
-        end
+  @spec clamp_quality(%Item{}) :: %Item{}
+  defp clamp_quality(%Item{name: @sulfuras} = item), do: item
 
-      Agent.update(agent, &List.replace_at(&1, i, item))
-    end
+  defp clamp_quality(%Item{quality: quality} = item) do
+    quality = quality |> min(@quality_max) |> max(@quality_min)
+    %{item | quality: quality}
+  end
 
-    :ok
+  @spec put_sell_in(%Item{}) :: %Item{}
+  defp put_sell_in(%Item{name: @sulfuras} = item), do: item
+
+  defp put_sell_in(%Item{sell_in: sell_in} = item) do
+    %{item | sell_in: sell_in - 1}
   end
 end
